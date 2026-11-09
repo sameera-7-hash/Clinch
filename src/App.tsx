@@ -17,7 +17,9 @@ const CommandCenter = lazy(() => import("@/pages/CommandCenter").then((m) => ({ 
 const CommandCenterPreview = lazy(() =>
   import("@/pages/CommandCenterPreview").then((m) => ({ default: m.CommandCenterPreview }))
 )
+const Dataset = lazy(() => import("@/pages/Dataset").then((m) => ({ default: m.Dataset })))
 const RedTeamLab = lazy(() => import("@/pages/RedTeamLab").then((m) => ({ default: m.RedTeamLab })))
+const ResetPassword = lazy(() => import("@/pages/ResetPassword").then((m) => ({ default: m.ResetPassword })))
 const SignIn = lazy(() => import("@/pages/SignIn").then((m) => ({ default: m.SignIn })))
 const Team = lazy(() => import("@/pages/Team").then((m) => ({ default: m.Team })))
 const ThreatAnalyzerChat = lazy(() =>
@@ -31,6 +33,7 @@ export function App() {
         <Routes>
           <Route path="/" element={<SecurityHero />} />
           <Route path="/sign-in" element={<SignIn />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/about" element={<About />} />
           <Route path="/preview" element={<CommandCenterPreview />} />
           <Route path="/team" element={<Team />} />
@@ -42,6 +45,7 @@ export function App() {
               <Route path="/adaptive" element={<AdaptiveDefense />} />
               <Route path="/threat-analyzer" element={<ThreatAnalyzerChat />} />
               <Route path="/analytics" element={<Analytics />} />
+              <Route path="/dataset" element={<Dataset />} />
             </Route>
           </Route>
         </Routes>

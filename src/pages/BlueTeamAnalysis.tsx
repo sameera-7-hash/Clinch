@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
+import { AppendToDatabaseButton } from "@/components/AppendToDatabaseButton"
 import { Reveal } from "@/components/motion/Reveal"
 import { RadarSweep } from "@/components/motion/RadarSweep"
 import { useRedTeamSync } from "@/contexts/redTeamSync"
@@ -80,7 +81,7 @@ export function BlueTeamAnalysis() {
   const gaugeColor = gaugeColorFor(finalRiskScore)
 
   return <div className="space-y-8">
-    <Reveal><div className="flex flex-wrap items-end justify-between gap-4"><div><p className="font-mono text-[10px] uppercase tracking-[0.22em] text-yellow-300">Detection intelligence / 03</p><h2 className="mt-2 text-4xl tracking-tight text-white">Blue Team Analysis</h2><p className="mt-2 text-sm text-slate-500">Inspect how the defense ensemble reached its verdict on the latest transaction.</p></div><div className="flex items-center gap-3"><Badge variant="outline" className={sourceBadge.className}>{sourceBadge.label}</Badge>{!synced && <Button onClick={runDemoAnalysis} disabled={demoLoading} variant="outline" className="font-mono text-[10px] uppercase tracking-wider">{demoLoading ? <Loader2 className="mr-2 size-3.5 animate-spin" /> : <RefreshCw className="mr-2 size-3.5" />}Run demo analysis</Button>}</div></div></Reveal>
+    <Reveal><div className="flex flex-wrap items-end justify-between gap-4"><div><p className="font-mono text-[10px] uppercase tracking-[0.22em] text-yellow-300">Detection intelligence / 03</p><h2 className="mt-2 text-4xl tracking-tight text-white">Blue Team Analysis</h2><p className="mt-2 text-sm text-slate-500">Inspect how the defense ensemble reached its verdict on the latest transaction.</p></div><div className="flex items-center gap-3"><Badge variant="outline" className={sourceBadge.className}>{sourceBadge.label}</Badge>{!synced && <Button onClick={runDemoAnalysis} disabled={demoLoading} variant="outline" className="font-mono text-[10px] uppercase tracking-wider">{demoLoading ? <Loader2 className="mr-2 size-3.5 animate-spin" /> : <RefreshCw className="mr-2 size-3.5" />}Run demo analysis</Button>}<AppendToDatabaseButton /></div></div></Reveal>
 
     {demoError && !synced && <Reveal><div className="flex items-start gap-2.5 border border-amber-500/30 bg-amber-500/5 px-4 py-3 text-xs text-amber-200"><AlertTriangle className="mt-0.5 size-3.5 shrink-0" /><span>Analysis backend unreachable ({demoError}). Showing demo data instead.</span></div></Reveal>}
 

@@ -1,20 +1,16 @@
 import { useEffect, useState } from "react"
 import { Navigate, Outlet, useLocation } from "react-router-dom"
-import { supabase } from "@/lib/supabase"
+import { getCurrentUser } from "@/lib/auth"
 
-// Gates the real dashboard (Command Center, Red/Blue Team, etc.) behind a Supabase
-// session. Without this, anyone could type the URL directly and land on the live app
-// with no account - the sign-in flow would just be theater.
+// Gates the real dashboard (Command Center, Red/Blue Team, etc.) behind a login session.
+// Without this, anyone could type the URL directly and land on the live app with no
+// account - the sign-in flow would just be theater.
 export function RequireAuth() {
   const location = useLocation()
   const [status, setStatus] = useState<"checking" | "authed" | "anon">("checking")
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => setStatus(data.session ? "authed" : "anon"))
-    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
-      setStatus(session ? "authed" : "anon")
-    })
-    return () => listener.subscription.unsubscribe()
+    void getCurrentUser().then((user) => setStatus(user ? "authed" : "anon"))
   }, [])
 
   if (status === "checking") {

@@ -24,7 +24,7 @@ import { getAnalyticsData } from "@/api/analytics"
 import { Badge } from "@/components/ui/badge"
 import { Reveal, RevealItem, RevealStagger } from "@/components/motion/Reveal"
 import { TypingText } from "@/components/motion/TypingText"
-import { supabase } from "@/lib/supabase"
+import { getCurrentUser } from "@/lib/auth"
 import { REGULATORY_POINTS } from "@/lib/regulatory"
 
 const HERO_HEADLINE = "Stop fraud before it becomes a story."
@@ -35,7 +35,7 @@ const signals = [
   { label: "Login anomaly", detail: "New device fingerprint", tone: "warning" },
 ]
 
-// The dashboard itself (Command Center, Red/Blue Team) is behind a Supabase login, so
+// The dashboard itself (Command Center, Red/Blue Team) is behind a login, so
 // the marketing nav no longer links straight into it - that would just dead-end on a
 // sign-in redirect. These point at the live read-only preview, in-page sections, and
 // the public story page instead.
@@ -93,14 +93,10 @@ export function SecurityHero() {
 
   // A logged-in visitor lands on the dashboard, not the pitch page.
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => {
-      if (data.session) navigate("/command-center", { replace: true })
+    void getCurrentUser().then((user) => {
+      if (user) navigate("/command-center", { replace: true })
       else setCheckingSession(false)
     })
-    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (session) navigate("/command-center", { replace: true })
-    })
-    return () => listener.subscription.unsubscribe()
   }, [navigate])
 
   useEffect(() => { void getAnalyticsData().then(setData) }, [])

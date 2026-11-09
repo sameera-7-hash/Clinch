@@ -1,0 +1,12 @@
+fastapi
+uvicorn[standard]
+psycopg[binary]
+psycopg-pool
+python-dotenv
+httpx
+pydantic[email]
+argon2-cffi
+cryptography
+PyJWT
+sentence-transformers
+pytest

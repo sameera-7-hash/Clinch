@@ -3,7 +3,7 @@ import { Link, useNavigate, useSearchParams } from "react-router-dom"
 import { motion } from "framer-motion"
 import { AlertTriangle, ArrowLeft, Check, Eye, EyeOff, Fingerprint, KeyRound, Loader2, Lock, Mail, ShieldCheck, Sparkles, type LucideIcon } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { supabase } from "@/lib/supabase"
+import { getCurrentUser, requestPasswordReset, signIn, signUp } from "@/lib/auth"
 import { CyberGrid } from "@/components/motion/CyberGrid"
 
 const highlights = [
@@ -22,7 +22,7 @@ const trustBadges = [
 // normally sits, then rises into a small caption above the field the moment the
 // user focuses in or has typed something, so it never collides with their input.
 // The field itself lifts slightly while focused so the active row reads clearly.
-function FloatingField({
+export function FloatingField({
   id,
   label,
   icon: Icon,
@@ -86,7 +86,7 @@ function FloatingField({
 export function SignIn() {
   const [searchParams] = useSearchParams()
   const navigate = useNavigate()
-  const [mode, setMode] = useState<"signin" | "signup">(searchParams.get("mode") === "signup" ? "signup" : "signin")
+  const [mode, setMode] = useState<"signin" | "signup" | "forgot">(searchParams.get("mode") === "signup" ? "signup" : "signin")
   const [name, setName] = useState("")
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
@@ -96,20 +96,12 @@ export function SignIn() {
   const [notice, setNotice] = useState("")
   const [checkingSession, setCheckingSession] = useState(true)
 
-  // Clicking the email confirmation link lands back here with a session already
-  // established (Supabase parses it from the URL automatically) - so this picks that
-  // up and moves on instead of showing a blank sign-in form to someone who just
-  // confirmed their account. Also covers the ordinary case of an already-signed-in
-  // visitor landing on this page directly.
+  // An already-signed-in visitor landing here directly moves on to the dashboard.
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => {
-      if (data.session) navigate("/command-center")
+    void getCurrentUser().then((user) => {
+      if (user) navigate("/command-center")
       else setCheckingSession(false)
     })
-    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (session) navigate("/command-center")
-    })
-    return () => listener.subscription.unsubscribe()
   }, [navigate])
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
@@ -118,37 +110,20 @@ export function SignIn() {
     setNotice("")
     setSubmitting(true)
 
-    if (mode === "signup") {
-      const { data, error: signUpError } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: { full_name: name },
-          // The confirmation link gets opened from an email client, often on a
-          // different device than the one sign-up happened on - so it must always
-          // point at the real deployed domain, never window.location.origin (that
-          // would bake in "localhost" whenever someone tests sign-up locally, which
-          // is useless from any other device). VITE_SITE_URL must also be added to
-          // Authentication -> URL Configuration -> Redirect URLs in the Supabase
-          // dashboard, or Supabase rejects it and falls back to whatever "Site URL"
-          // is configured there instead.
-          emailRedirectTo: `${import.meta.env.VITE_SITE_URL || window.location.origin}/sign-in`,
-        },
-      })
-      setSubmitting(false)
-      if (signUpError) return setError(signUpError.message)
-      // With email confirmation enabled (Supabase's default), sign-up succeeds but
-      // returns no session until the user clicks the confirmation link - so there's
-      // nothing to navigate into yet.
-      if (!data.session) return setNotice("Account created. Check your email to confirm it before signing in.")
+    try {
+      if (mode === "forgot") {
+        const { message } = await requestPasswordReset(email)
+        setNotice(message)
+        return
+      }
+      if (mode === "signup") await signUp(email, password, name)
+      else await signIn(email, password)
       navigate("/command-center")
-      return
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not reach the Clinch API.")
+    } finally {
+      setSubmitting(false)
     }
-
-    const { error: signInError } = await supabase.auth.signInWithPassword({ email, password })
-    setSubmitting(false)
-    if (signInError) return setError(signInError.message)
-    navigate("/command-center")
   }
 
   if (checkingSession) {
@@ -233,9 +208,9 @@ export function SignIn() {
             </button>
           </div>
 
-          <h2 className="hero-title text-4xl text-white">{mode === "signin" ? "Welcome back." : "Get started."}</h2>
+          <h2 className="hero-title text-4xl text-white">{mode === "signin" ? "Welcome back." : mode === "signup" ? "Get started." : "Reset access."}</h2>
           <p className="mt-2 text-sm text-white/45">
-            {mode === "signin" ? "Sign in to your security console." : "Set up access to the defense grid."}
+            {mode === "signin" ? "Sign in to your security console." : mode === "signup" ? "Set up access to the defense grid." : "We'll email you a link to choose a new password."}
           </p>
 
           <form onSubmit={handleSubmit} className="mt-8 space-y-8">
@@ -243,26 +218,28 @@ export function SignIn() {
               <FloatingField id="name" label="Full name" icon={Fingerprint} value={name} onChange={setName} required />
             )}
             <FloatingField id="email" label="Work email" icon={Mail} type="email" value={email} onChange={setEmail} required />
-            <div className="relative">
-              {mode === "signin" && (
-                <button type="button" className="absolute -top-5.5 right-0 z-10 text-[10px] font-medium text-indigo-300 hover:text-indigo-200">Forgot?</button>
-              )}
-              <FloatingField
-                id="password"
-                label="Password"
-                icon={Lock}
-                type={showPassword ? "text" : "password"}
-                value={password}
-                onChange={setPassword}
-                required
-                minLength={6}
-                rightSlot={
-                  <button type="button" onClick={() => setShowPassword((v) => !v)} className="shrink-0 text-white/30 transition-colors hover:text-white/60" aria-label={showPassword ? "Hide password" : "Show password"}>
-                    {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
-                  </button>
-                }
-              />
-            </div>
+            {mode !== "forgot" && (
+              <div className="relative">
+                {mode === "signin" && (
+                  <button type="button" onClick={() => { setMode("forgot"); setError(""); setNotice("") }} className="absolute -top-5.5 right-0 z-10 text-[10px] font-medium text-indigo-300 hover:text-indigo-200">Forgot password?</button>
+                )}
+                <FloatingField
+                  id="password"
+                  label="Password"
+                  icon={Lock}
+                  type={showPassword ? "text" : "password"}
+                  value={password}
+                  onChange={setPassword}
+                  required
+                  minLength={mode === "signup" ? 8 : undefined}
+                  rightSlot={
+                    <button type="button" onClick={() => setShowPassword((v) => !v)} className="shrink-0 text-white/30 transition-colors hover:text-white/60" aria-label={showPassword ? "Hide password" : "Show password"}>
+                      {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                    </button>
+                  }
+                />
+              </div>
+            )}
 
             {error && (
               <div className="flex items-start gap-2 rounded-xl border border-red-500/30 bg-red-500/10 px-3.5 py-2.5 text-xs text-red-300">
@@ -283,7 +260,7 @@ export function SignIn() {
               className="mt-2 inline-flex w-full items-center justify-center gap-2 rounded-full bg-white px-5 py-3 text-sm font-semibold text-[#0a0a0f] shadow-[0_10px_30px_-12px_rgba(255,255,255,0.3)] transition-all hover:-translate-y-0.5 hover:shadow-[0_14px_36px_-12px_rgba(255,255,255,0.4)] disabled:pointer-events-none disabled:opacity-60"
             >
               {submitting && <Loader2 className="size-4 animate-spin" />}
-              {submitting ? "Verifying..." : mode === "signin" ? "Sign in" : "Create account"}
+              {submitting ? "Verifying..." : mode === "signin" ? "Sign in" : mode === "signup" ? "Create account" : "Send reset link"}
             </button>
           </form>
 
