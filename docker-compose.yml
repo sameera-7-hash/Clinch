@@ -1,0 +1,141 @@
+# Runs every Clinch backend service. The frontend stays on the host with `npm run dev`.
+# Commands are in README-CMD.md.
+name: clinch
+
+x-python-service: &python-service
+  restart: unless-stopped
+  init: true
+
+services:
+  clinch-api:
+    <<: *python-service
+    build:
+      context: .
+      dockerfile: docker/python.Dockerfile
+      args:
+        SERVICE_DIR: clinch-api
+        CPU_TORCH: "1"
+    command: ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8013"]
+    env_file: .env
+    environment:
+      # These replace the localhost values in .env with the container addresses.
+      DATABASE_URL: postgresql://clinch:${CLINCH_DB_PASSWORD:-clinch_local}@postgres:5432/clinch
+      OLLAMA_HOST: http://ollama:11434
+    ports:
+      - "127.0.0.1:8013:8013"
+    volumes:
+      - huggingface-cache:/home/app/.cache/huggingface
+    depends_on:
+      postgres:
+        condition: service_healthy
+      ollama:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request as u; u.urlopen('http://127.0.0.1:8013/health')"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 120s
+
+  blue-team:
+    <<: *python-service
+    build:
+      context: .
+      dockerfile: docker/python.Dockerfile
+      args:
+        SERVICE_DIR: fraudshield-ai/red-team01/sentinelpay
+        # The saved models in models/*.pkl load with these versions.
+        PIP_PINS: scikit-learn==1.7.2 xgboost==3.4.1 joblib==1.5.2 numpy==2.3.5 pandas==2.3.3
+    command: ["uvicorn", "blue_team_api:app", "--host", "0.0.0.0", "--port", "8011"]
+    ports:
+      - "127.0.0.1:8011:8011"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request as u; u.urlopen('http://127.0.0.1:8011/')"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 60s
+
+  chatbot:
+    <<: *python-service
+    build:
+      context: .
+      dockerfile: docker/python.Dockerfile
+      args:
+        SERVICE_DIR: Fraudshield-back/blue_team_fraud_engine
+        CPU_TORCH: "1"
+        # fraud_ml_model.joblib loads with these versions.
+        PIP_PINS: scikit-learn==1.9.0 joblib==1.5.3 numpy==2.5.2 pandas==3.1.1
+    command: ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8012"]
+    env_file: Fraudshield-back/blue_team_fraud_engine/.env
+    ports:
+      - "127.0.0.1:8012:8012"
+    volumes:
+      - huggingface-cache:/home/app/.cache/huggingface
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request as u; u.urlopen('http://127.0.0.1:8012/health')"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 120s
+
+  red-team:
+    <<: *python-service
+    build:
+      context: .
+      dockerfile: docker/python.Dockerfile
+      args:
+        SERVICE_DIR: Fraudshield-back/fraudshield-redteam.api
+    command: ["gunicorn", "--bind", "0.0.0.0:8000", "--workers", "1", "--threads", "4", "--timeout", "120", "app:app"]
+    ports:
+      - "127.0.0.1:8000:8000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request as u; u.urlopen('http://127.0.0.1:8000/health')"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  # PostgreSQL and Ollama have no published ports, so they can't clash with copies
+  # already installed on the host. Only the containers above can reach them.
+  postgres:
+    image: pgvector/pgvector:pg17
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: clinch
+      POSTGRES_USER: clinch
+      POSTGRES_PASSWORD: ${CLINCH_DB_PASSWORD:-clinch_local}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U clinch -d clinch"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
+  ollama:
+    image: ollama/ollama:latest
+    restart: unless-stopped
+    volumes:
+      - ollama-models:/root/.ollama
+    healthcheck:
+      test: ["CMD", "ollama", "list"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
+  # Downloads the model once and exits. It's skipped quickly when the model exists.
+  ollama-pull:
+    image: ollama/ollama:latest
+    restart: "no"
+    environment:
+      OLLAMA_HOST: http://ollama:11434
+    command: ["pull", "${OLLAMA_MODEL:-llama3.2:1b}"]
+    depends_on:
+      ollama:
+        condition: service_healthy
+
+volumes:
+  postgres-data:
+  ollama-models:
+  huggingface-cache:

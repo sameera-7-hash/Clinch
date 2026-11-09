@@ -11,7 +11,7 @@ import {
   type SyncedAttackType,
 } from "@/contexts/redTeamSync"
 
-const RED_TEAM_API = "https://fraudshield-redteam-api.onrender.com"
+const RED_TEAM_API = import.meta.env.VITE_RED_TEAM_API_BASE_URL || "https://fraudshield-redteam-api.onrender.com"
 
 // "Auto / Orchestrator" is the one attack_type value the API answers differently for -
 // instead of {transaction, signals} at the top level, it runs all six agents against

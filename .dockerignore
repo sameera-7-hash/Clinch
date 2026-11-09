@@ -1,0 +1,19 @@
+# Secrets reach containers through env_file at runtime, never through an image layer.
+**/.env
+**/.env.*
+
+**/.git
+**/.venv
+**/venv
+**/node_modules
+**/__pycache__
+**/.pytest_cache
+**/.claude
+**/.agents
+**/*.log
+
+# Not used by any backend image.
+dist
+src
+public
+Fraudshield-back/dataset
