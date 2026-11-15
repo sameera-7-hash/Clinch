@@ -12,7 +12,7 @@
 
 <br/>
 
-Frontend Codename: **Clinch Dashboard** &nbsp;·&nbsp; Core Engine: **SentinelPay AI**
+Frontend Codename: **Clinch Dashboard** &nbsp;·&nbsp; 
 
 <br/>
 
