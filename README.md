@@ -11,6 +11,7 @@
 [![Typing SVG](https://readme-typing-svg.demolab.com?font=Fira+Code&duration=1000&pause=1000&color=0FC9F7&multiline=true&width=600&height=80&lines=A+fraud+defense+system+which+attacks+itself;to+discover+and+fix+its+own+blind+spots)](https://git.io/typing-svg)
 </div>
 
+<div>
 <br/>
 
 ![Status](https://img.shields.io/badge/STATUS-OPERATIONAL-00e676?style=for-the-badge&labelColor=0d1117)
