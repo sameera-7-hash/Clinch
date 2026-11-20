@@ -1,14 +1,16 @@
 <div align="center">
 
-<img src="https://capsule-render.vercel.app/api?type=waving&color=0:0f2027,50:2c5364,100:00c6ff&height=220&section=header&text=Clinch&fontSize=52&fontColor=ffffff&fontAlignY=38&desc=Auton[...]
+<h1>CLINCH</h1>
 
-<br/>
+<p><strong>Adaptive Red-Team &amp; Blue-Team Payment Defense</strong></p>
 
 <img src="public/favicon.svg" width="150" alt="Clinch Logo"/>
 
 <br/><br/>
 
-[![Typing SVG](https://readme-typing-svg.demolab.com?font=Fira+Code&weight=600&size=22&duration=2800&pause=900&color=00C6FF&center=true&vCenter=true&width=780&lines=A+fraud-defense+system+that+att[...]
+[![Typing SVG](https://readme-typing-svg.demolab.com?font=Fira+Code&weight=600&size=22&duration=2800&pause=900&color=00C6FF&center=true&vCenter=true&width=780&lines=A+fraud-defense+system+that+attacks+itself+to+discover+and+fix+its+own+blind+spots)]
+
+</div>
 
 <br/>
 
