@@ -8,7 +8,7 @@
 
 <br/><br/>
 
-![Typing SVG](https://readme-typing-svg.demolab.com?font=Fira+Code&weight=600&size=22&duration=2800&pause=900&color=00C6FF&center=true&vCenter=true&width=780&lines=A+fraud-defense+system+that+attacks+itself+to+discover+and+fix+its+own+blind+spots)
+![Typing SVG](https://readme-typing-svg.demolab.com?font=Fira+Code&duration=1000&pause=1000&color=0FC9F7&multiline=true&width=435&lines=A+fraud+defense+system+which;+attacks+itself+to+discover+and+;fix+its+own+blind+spots)
 
 </div>
 
